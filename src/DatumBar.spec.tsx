@@ -1,18 +1,18 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-import App, {
-	TagSegment,
+import DatumBar, {
 	addTagSeg,
 	findFocusedSeg,
 	changeFocusedSeg,
 	deleteSeg,
 } from './DatumBar'
+import { TagSegment } from './interfaces'
 
 //function getTagSegsFromDatum(datum: Datum): TagSegment[] {}
 
 it('renders without crashing', () => {
 	const div = document.createElement('div')
-	ReactDOM.render(<App />, div)
+	ReactDOM.render(<DatumBar />, div)
 	ReactDOM.unmountComponentAtNode(div)
 })
 
