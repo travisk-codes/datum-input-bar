@@ -5,6 +5,7 @@ import DatumBar, {
 	findFocusedSeg,
 	changeFocusedSeg,
 	deleteSeg,
+	placeAddValueButtons,
 } from './DatumBar'
 import { TagSegment } from './interfaces'
 
@@ -168,4 +169,53 @@ it('deletes segments', () => {
 
 	const emptyBar: TagSegment[] = []
 	expect(() => deleteSeg(emptyBar)).toThrow()
+})
+
+it('places add-value buttons after valueless tags', () => {
+	let before: TagSegment[] = [
+		{ text: 'a', isFocused: false },
+		{ text: '', isFocused: true },
+	]
+	let after: TagSegment[] = [
+		{ text: 'a', isFocused: false, hasValue: false },
+		{ text: '', isFocused: true },
+	]
+	expect(placeAddValueButtons(before)).toEqual(after)
+
+	before = [
+		{ text: 'a', isFocused: false },
+		{ text: 'b', isFocused: true },
+	]
+	after = [
+		{ text: 'a', isFocused: false, hasValue: false },
+		{ text: 'b', isFocused: true, hasValue: false },
+	]
+	expect(placeAddValueButtons(before)).toEqual(after)
+
+	before = [
+		{ text: 'a', isFocused: false },
+		{ text: 'b', isFocused: false, hasValue: true },
+		{ text: '', isFocused: true },
+	]
+	after = [
+		{ text: 'a', isFocused: false, hasValue: false },
+		{ text: 'b', isFocused: false, hasValue: true },
+		{ text: '', isFocused: true },
+	]
+	expect(placeAddValueButtons(before)).toEqual(after)
+
+	before = [
+		{ text: '', isFocused: true },
+		{ text: 'b', isFocused: false, hasValue: true },
+		{ text: 'c', isFocused: false },
+	]
+
+	expect(placeAddValueButtons(before)).toEqual(before)
+
+	before = [
+		{ text: 'a', isFocused: false },
+		{ text: 'b', isFocused: false, hasValue: true },
+		{ text: '', isFocused: true, hasValue: true }, // value cannot have a value
+	]
+	expect(() => placeAddValueButtons(before)).toThrow()
 })
