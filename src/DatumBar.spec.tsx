@@ -9,8 +9,6 @@ import DatumBar, {
 } from './DatumBar'
 import { TagSegment } from './interfaces'
 
-//function getTagSegsFromDatum(datum: Datum): TagSegment[] {}
-
 it('renders without crashing', () => {
 	const div = document.createElement('div')
 	ReactDOM.render(<DatumBar />, div)
@@ -218,4 +216,14 @@ it('places add-value buttons after valueless tags', () => {
 		{ text: '', isFocused: true, hasValue: true }, // value cannot have a value
 	]
 	expect(() => placeAddValueButtons(before)).toThrow()
+
+	before = [
+		{ text: '', isFocused: true, hasValue: false },
+		{ text: 'b', isFocused: false, hasValue: false },
+	]
+	after = [
+		{ text: '', isFocused: true, hasValue: undefined },
+		{ text: 'b', isFocused: false, hasValue: false },
+	]
+	expect(placeAddValueButtons(before)).toEqual(after)
 })

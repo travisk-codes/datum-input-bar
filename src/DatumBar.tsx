@@ -66,6 +66,23 @@ export function changeFocusedSeg(
 	return segs
 }
 
+export function placeAddValueButtons(
+	segs: TagSegment[]
+): TagSegment[] {
+	let newSegs: TagSegment[] = [...segs].map((s, i) => {
+		if (i > 0 && segs[i - 1].hasValue && s.hasValue)
+			throw new Error('a value cannot have a value')
+		if (!s.text.length && s.hasValue === false)
+			return { ...s, hasValue: undefined }
+		if (!s.text.length) return s
+		if (i > 0 && segs[i - 1].hasValue) return s
+		if (!s.hasValue) return { ...s, hasValue: false }
+		return s
+	})
+
+	return newSegs
+}
+
 export default function DatumBar() {
 	const newSeg = [{ text: '', isFocused: true }]
 	const [segments, setSegments] = useState(newSeg)
@@ -90,7 +107,7 @@ export default function DatumBar() {
 		e.preventDefault()
 		let newSegs: TagSegment[] = [...segments]
 		newSegs[i].text = e.currentTarget.value
-		setSegments(newSegs)
+		setSegments(placeAddValueButtons(newSegs))
 	}
 
 	function handleFocus(i: number) {
@@ -107,23 +124,34 @@ export default function DatumBar() {
 	}
 
 	function renderSegments(segments: TagSegment[]) {
-		return segments.map((s, i) => (
-			<input
-				key={i}
-				ref={input => (refs[i] = input)}
-				type='text'
-				value={s.text}
-				onFocus={e => handleFocus(i)}
-				onChange={e => handleChange(e, i)}
-				onKeyDown={handleKeyDown}
-			/>
-		))
+		const addValueButton = <button>+</button>
+		return segments.map((s, i) => {
+			let input = (
+				<input
+					key={i}
+					ref={input => (refs[i] = input)}
+					type='text'
+					value={s.text}
+					onFocus={e => handleFocus(i)}
+					onChange={e => handleChange(e, i)}
+					onKeyDown={handleKeyDown}
+				/>
+			)
+			if (s.hasValue === false) {
+				return (
+					<div key={i}>
+						{input}
+						{addValueButton}
+					</div>
+				)
+			} else return input
+		})
 	}
 
 	return (
 		<form onSubmit={handleSubmit}>
 			{renderSegments(segments)}
-			<button type='submit'>+</button>
+			<button type='submit'>add datum</button>
 		</form>
 	)
 }
