@@ -8,6 +8,7 @@ import DatumBar, {
 	placeAddValueButtons,
 	makeEmptySegsButtons,
 	hasPair,
+	removeValueFromEmptyTag,
 } from './DatumBar'
 import { TagSegment } from './interfaces'
 
@@ -143,6 +144,20 @@ it('changes the focused input', () => {
 
 	const emptyBar: TagSegment[] = []
 	expect(() => changeFocusedSeg(emptyBar, 0)).toThrow()
+
+	before = [
+		{ text: 'a', isFocused: false },
+		{ text: '+', isFocused: false },
+		{ text: 'c', isFocused: true },
+		{ text: 'd', isFocused: false },
+	]
+	after = [
+		{ text: 'a', isFocused: false },
+		{ text: '', isFocused: true },
+		{ text: 'c', isFocused: false },
+		{ text: 'd', isFocused: false },
+	]
+	expect(changeFocusedSeg(before, 1)).toEqual(after)
 })
 
 it('deletes segments', () => {
@@ -270,4 +285,16 @@ it('checks if a segment has a value/button', () => {
 	]
 	expect(hasPair(segs, 0)).toEqual(false)
 	expect(hasPair(segs, 1)).toEqual(true)
+})
+
+it('removes add-value buttons from empty tags', () => {
+	let before = [
+		{ ...newSeg(), isFocused: true },
+		newSeg('+'),
+	]
+	let after = [{ ...newSeg(), isFocused: true }]
+	expect(removeValueFromEmptyTag(before)).toEqual(after)
+
+	before = [{ ...newSeg(), isFocused: true }]
+	expect(removeValueFromEmptyTag(before)).toEqual(before)
 })

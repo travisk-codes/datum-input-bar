@@ -63,6 +63,7 @@ export function changeFocusedSeg(
 	segs = segs.map(s => ({ ...s, isFocused: false }))
 	if (i < 0) return segs
 	segs[i].isFocused = true
+	if (segs[i].text === '+') segs[i].text = ''
 	return segs
 }
 
@@ -121,6 +122,23 @@ export function makeEmptySegsButtons(
 	})
 }
 
+export function removeValueFromEmptyTag(
+	segs: TagSegment[]
+): TagSegment[] {
+	let to_remove: number[] = []
+	let index_adj = 0
+	segs.map((s, i) => {
+		if (!s.text && hasPair(segs, i)) to_remove.push(i + 1)
+		return null
+	})
+	let newSegs = [...segs]
+	for (let i of to_remove) {
+		newSegs.splice(i - index_adj, 1)
+		index_adj++
+	}
+	return newSegs
+}
+
 export default function DatumBar() {
 	const newSeg = [{ text: '', isFocused: true }]
 	const [segments, setSegments] = useState(newSeg)
@@ -145,12 +163,16 @@ export default function DatumBar() {
 		e.preventDefault()
 		let newSegs: TagSegment[] = [...segments]
 		newSegs[i].text = e.currentTarget.value
-		setSegments(placeAddValueButtons(newSegs))
+		setSegments(
+			removeValueFromEmptyTag(placeAddValueButtons(newSegs))
+		)
 	}
 
 	function handleFocus(i: number) {
 		let newSegs: TagSegment[] = [...segments]
-		setSegments(changeFocusedSeg(newSegs, i))
+		setSegments(
+			makeEmptySegsButtons(changeFocusedSeg(newSegs, i))
+		)
 	}
 
 	function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -162,7 +184,6 @@ export default function DatumBar() {
 	}
 
 	function renderSegments(segments: TagSegment[]) {
-		const addValueButton = <button>+</button>
 		return segments.map((s, i) => {
 			let input = (
 				<input
