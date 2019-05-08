@@ -83,6 +83,18 @@ export function placeAddValueButtons(
 	return newSegs
 }
 
+export function makeEmptySegsButtons(
+	segs: TagSegment[]
+): TagSegment[] {
+	return segs.map(s => {
+		if (!s.text && !s.isFocused) {
+			return { ...s, text: '+' }
+		} else {
+			return s
+		}
+	})
+}
+
 export default function DatumBar() {
 	const newSeg = [{ text: '', isFocused: true }]
 	const [segments, setSegments] = useState(newSeg)
@@ -137,14 +149,20 @@ export default function DatumBar() {
 					onKeyDown={handleKeyDown}
 				/>
 			)
+			let button = (
+				<button onFocus={e => handleFocus(i)} key={i}>
+					{s.text}
+				</button>
+			)
+			let seg = s.isFocused ? input : button
 			if (s.hasValue === false) {
 				return (
 					<div key={i}>
-						{input}
+						{seg}
 						{addValueButton}
 					</div>
 				)
-			} else return input
+			} else return seg
 		})
 	}
 

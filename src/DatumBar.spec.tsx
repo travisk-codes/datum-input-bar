@@ -6,8 +6,17 @@ import DatumBar, {
 	changeFocusedSeg,
 	deleteSeg,
 	placeAddValueButtons,
+	makeEmptySegsButtons,
 } from './DatumBar'
 import { TagSegment } from './interfaces'
+
+function newSeg(text: string = ''): TagSegment {
+	return {
+		text,
+		isFocused: false,
+		hasValue: false,
+	}
+}
 
 it('renders without crashing', () => {
 	const div = document.createElement('div')
@@ -226,4 +235,16 @@ it('places add-value buttons after valueless tags', () => {
 		{ text: 'b', isFocused: false, hasValue: false },
 	]
 	expect(placeAddValueButtons(before)).toEqual(after)
+})
+
+it('replaces blurred empty segments with "+"', () => {
+	let before = [newSeg()]
+	let after = [newSeg('+')]
+	expect(makeEmptySegsButtons(before)).toEqual(after)
+
+	before = [newSeg('a')]
+	expect(makeEmptySegsButtons(before)).toEqual(before)
+
+	before = [{ ...newSeg(), isFocused: true }]
+	expect(makeEmptySegsButtons(before)).toEqual(before)
 })
