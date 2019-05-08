@@ -69,18 +69,44 @@ export function changeFocusedSeg(
 export function placeAddValueButtons(
 	segs: TagSegment[]
 ): TagSegment[] {
-	let newSegs: TagSegment[] = [...segs].map((s, i) => {
+	let insert_at: number[] = []
+	let pad: number = 0
+	const button: TagSegment = {
+		text: '+',
+		isFocused: false,
+		hasValue: false,
+	}
+	let newSegs = [...segs].map((s, i) => {
 		if (i > 0 && segs[i - 1].hasValue && s.hasValue)
 			throw new Error('a value cannot have a value')
-		if (!s.text.length && s.hasValue === false)
-			return { ...s, hasValue: undefined }
-		if (!s.text.length) return s
 		if (i > 0 && segs[i - 1].hasValue) return s
-		if (!s.hasValue) return { ...s, hasValue: false }
+		if (s.text === '+') return s
+		if (s.text && !hasPair(segs, i)) {
+			insert_at.push(i + 1)
+			return { ...s, hasValue: false }
+		}
 		return s
 	})
-
+	for (let i of insert_at) {
+		if (i === newSegs.length) {
+			newSegs.push(button)
+		} else {
+			newSegs.splice(i + pad, 0, button)
+			pad++
+		}
+	}
 	return newSegs
+}
+
+export function hasPair(
+	segs: TagSegment[],
+	i: number
+): boolean {
+	if (i < 0 || i >= segs.length)
+		throw new Error('index out of range')
+	if (segs[i].hasValue) return true
+	if (segs[i + 1] && segs[i + 1].text === '+') return true
+	return false
 }
 
 export function makeEmptySegsButtons(
@@ -154,15 +180,7 @@ export default function DatumBar() {
 					{s.text}
 				</button>
 			)
-			let seg = s.isFocused ? input : button
-			if (s.hasValue === false) {
-				return (
-					<div key={i}>
-						{seg}
-						{addValueButton}
-					</div>
-				)
-			} else return seg
+			return s.isFocused ? input : button
 		})
 	}
 

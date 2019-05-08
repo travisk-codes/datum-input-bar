@@ -7,7 +7,7 @@ export interface TagSegment {
 	text: string
 	isFocused: boolean
 	placeholder?: string
-	hasValue?: boolean | undefined
+	hasValue?: boolean
 }
 
 export interface Datum {

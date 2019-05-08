@@ -7,6 +7,7 @@ import DatumBar, {
 	deleteSeg,
 	placeAddValueButtons,
 	makeEmptySegsButtons,
+	hasPair,
 } from './DatumBar'
 import { TagSegment } from './interfaces'
 
@@ -185,6 +186,7 @@ it('places add-value buttons after valueless tags', () => {
 	]
 	let after: TagSegment[] = [
 		{ text: 'a', isFocused: false, hasValue: false },
+		newSeg('+'),
 		{ text: '', isFocused: true },
 	]
 	expect(placeAddValueButtons(before)).toEqual(after)
@@ -195,7 +197,9 @@ it('places add-value buttons after valueless tags', () => {
 	]
 	after = [
 		{ text: 'a', isFocused: false, hasValue: false },
+		newSeg('+'),
 		{ text: 'b', isFocused: true, hasValue: false },
+		newSeg('+'),
 	]
 	expect(placeAddValueButtons(before)).toEqual(after)
 
@@ -206,6 +210,7 @@ it('places add-value buttons after valueless tags', () => {
 	]
 	after = [
 		{ text: 'a', isFocused: false, hasValue: false },
+		newSeg('+'),
 		{ text: 'b', isFocused: false, hasValue: true },
 		{ text: '', isFocused: true },
 	]
@@ -214,7 +219,7 @@ it('places add-value buttons after valueless tags', () => {
 	before = [
 		{ text: '', isFocused: true },
 		{ text: 'b', isFocused: false, hasValue: true },
-		{ text: 'c', isFocused: false },
+		{ text: 'c', isFocused: false, hasValue: false },
 	]
 
 	expect(placeAddValueButtons(before)).toEqual(before)
@@ -231,8 +236,9 @@ it('places add-value buttons after valueless tags', () => {
 		{ text: 'b', isFocused: false, hasValue: false },
 	]
 	after = [
-		{ text: '', isFocused: true, hasValue: undefined },
+		{ text: '', isFocused: true, hasValue: false },
 		{ text: 'b', isFocused: false, hasValue: false },
+		newSeg('+'),
 	]
 	expect(placeAddValueButtons(before)).toEqual(after)
 })
@@ -247,4 +253,21 @@ it('replaces blurred empty segments with "+"', () => {
 
 	before = [{ ...newSeg(), isFocused: true }]
 	expect(makeEmptySegsButtons(before)).toEqual(before)
+})
+
+it('checks if a segment has a value/button', () => {
+	let segs = [newSeg()]
+	expect(hasPair(segs, 0)).toEqual(false)
+	expect(() => hasPair(segs, 1)).toThrow()
+
+	segs = [newSeg('a')]
+	expect(hasPair(segs, 0)).toEqual(false)
+
+	segs = [
+		newSeg('a'),
+		{ ...newSeg('b'), hasValue: false },
+		newSeg('+'),
+	]
+	expect(hasPair(segs, 0)).toEqual(false)
+	expect(hasPair(segs, 1)).toEqual(true)
 })
