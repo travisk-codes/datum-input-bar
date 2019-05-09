@@ -8,6 +8,7 @@ import DatumBar, {
 	placeAddValueButtons,
 	makeEmptySegsButtons,
 	hasPair,
+	isAValue,
 	removeValueFromEmptyTag,
 } from './DatumBar'
 import { TagSegment } from './interfaces'
@@ -297,4 +298,13 @@ it('removes add-value buttons from empty tags', () => {
 
 	before = [{ ...newSeg(), isFocused: true }]
 	expect(removeValueFromEmptyTag(before)).toEqual(before)
+})
+
+it('checks if a segment is a value', () => {
+	let segs = [newSeg()]
+	expect(isAValue(segs, 0)).toEqual(false)
+	expect(() => isAValue(segs, 1)).toThrow()
+
+	segs = [newSeg(), newSeg('+')]
+	expect(isAValue(segs, 1)).toEqual(true)
 })

@@ -110,6 +110,18 @@ export function hasPair(
 	return false
 }
 
+export function isAValue(
+	segs: TagSegment[],
+	i: number
+): boolean {
+	if (i < 0 || i >= segs.length)
+		throw new Error('index out of range')
+	if (!segs[i - 1]) return false
+	if (segs[i - 1].hasValue) return true
+	if (segs[i].text === '+') return true
+	return false
+}
+
 export function makeEmptySegsButtons(
 	segs: TagSegment[]
 ): TagSegment[] {
@@ -170,15 +182,16 @@ export default function DatumBar() {
 
 	function handleFocus(i: number) {
 		let newSegs: TagSegment[] = [...segments]
-		setSegments(
-			makeEmptySegsButtons(changeFocusedSeg(newSegs, i))
-		)
+		setSegments(makeEmptySegsButtons(newSegs))
 	}
 
 	function handleSubmit(e: FormEvent<HTMLFormElement>) {
 		e.preventDefault()
 		let newSegs: TagSegment[] = addTagSeg([...segments])
 		let i: number = findFocusedSeg(newSegs)
+		console.log(i)
+		console.log(isAValue(segments, i))
+		if (isAValue(segments, i)) i += 1
 		newSegs = changeFocusedSeg(newSegs, i)
 		setSegments(newSegs)
 	}
