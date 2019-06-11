@@ -7,13 +7,25 @@ import React, {
 	KeyboardEvent,
 } from 'react'
 import { TagSegment } from './interfaces'
+import './DatumBar.css'
+
+export function findFocusedSeg(segs: TagSegment[]): number {
+	let focused = segs.filter(s => s.isFocused)
+	if (!focused.length) return -1
+	if (focused.length > 1)
+		throw new Error('more than one input is "focused"')
+	return segs
+		.map((s, i) => (s.isFocused ? i : 0))
+		.reduce((sum, i) => (sum += i))
+}
 
 // prettier-ignore
-export function addTagSeg(segs: TagSegment[]): TagSegment[] {
+export function addSeg(segs: TagSegment[]): TagSegment[] {
 	// prettier-ignore
 	let i: number = findFocusedSeg(segs)
 	if (segs.length && !segs[i].text) return segs
-	const newSeg: TagSegment = { text: '', isFocused: true }
+	let newSeg: TagSegment = { text: '', isFocused: true, isValue: false }
+	if (segs.length && !segs[i].isValue) newSeg.isValue = true
 	segs = segs.map(s => ({ ...s, isFocused: false }))
 	segs.splice(i + 1, 0, newSeg)
 	return segs
@@ -42,16 +54,6 @@ export function deleteSeg(
 	return otherSegs
 }
 
-export function findFocusedSeg(segs: TagSegment[]): number {
-	let focused = segs.filter(s => s.isFocused)
-	if (!focused.length) return -1
-	if (focused.length > 1)
-		throw new Error('more than one input is "focused"')
-	return segs
-		.map((s, i) => (s.isFocused ? i : 0))
-		.reduce((sum, i) => (sum += i))
-}
-
 export function changeFocusedSeg(
 	segs: TagSegment[],
 	i: number
@@ -70,32 +72,21 @@ export function changeFocusedSeg(
 export function placeAddValueButtons(
 	segs: TagSegment[]
 ): TagSegment[] {
-	let insert_at: number[] = []
-	let pad: number = 0
 	const button: TagSegment = {
 		text: '+',
 		isFocused: false,
-		hasValue: false,
+		isValue: true,
 	}
-	let newSegs = [...segs].map((s, i) => {
-		if (i > 0 && segs[i - 1].hasValue && s.hasValue)
-			throw new Error('a value cannot have a value')
-		if (i > 0 && segs[i - 1].hasValue) return s
-		if (s.text === '+') return s
-		if (s.text && !hasPair(segs, i)) {
-			insert_at.push(i + 1)
-			return { ...s, hasValue: false }
-		}
-		return s
+	let newSegs = [...segs]
+	let indexAdj = 0
+	segs.forEach((s, i) => {
+		if (!s.text) return
+		if (s.text === '+') return
+		if (hasPair(segs, i)) return
+		if (s.isValue) return
+		newSegs.splice(i + indexAdj + 1, 0, button)
+		indexAdj++
 	})
-	for (let i of insert_at) {
-		if (i === newSegs.length) {
-			newSegs.push(button)
-		} else {
-			newSegs.splice(i + pad, 0, button)
-			pad++
-		}
-	}
 	return newSegs
 }
 
@@ -105,20 +96,10 @@ export function hasPair(
 ): boolean {
 	if (i < 0 || i >= segs.length)
 		throw new Error('index out of range')
-	if (segs[i].hasValue) return true
-	if (segs[i + 1] && segs[i + 1].text === '+') return true
-	return false
-}
-
-export function isAValue(
-	segs: TagSegment[],
-	i: number
-): boolean {
-	if (i < 0 || i >= segs.length)
-		throw new Error('index out of range')
-	if (!segs[i - 1]) return false
-	if (segs[i - 1].hasValue) return true
-	if (segs[i].text === '+') return true
+	if (segs[i].isValue) return true
+	if (!segs[i + 1]) return false
+	if (segs[i + 1].text === '+') return true
+	if (segs[i + 1].isFocused) return true
 	return false
 }
 
@@ -155,11 +136,12 @@ export default function DatumBar() {
 	const newSeg = [{ text: '', isFocused: true }]
 	const [segments, setSegments] = useState(newSeg)
 	let refs: any[] = []
+
 	useEffect(() => {
 		refs[findFocusedSeg(segments)].focus()
 	})
 
-	function handleKeyDown(
+	function checkForBackspace(
 		e: KeyboardEvent<HTMLInputElement>
 	) {
 		// prettier-ignore
@@ -175,53 +157,80 @@ export default function DatumBar() {
 		e.preventDefault()
 		let newSegs: TagSegment[] = [...segments]
 		newSegs[i].text = e.currentTarget.value
-		setSegments(
-			removeValueFromEmptyTag(placeAddValueButtons(newSegs))
-		)
+		console.log(newSegs[i].isValue)
+		if (!newSegs[i].isValue)
+			newSegs = placeAddValueButtons(newSegs)
+		newSegs = removeValueFromEmptyTag(newSegs)
+		setSegments(newSegs)
 	}
 
 	function handleFocus(i: number) {
 		let newSegs: TagSegment[] = [...segments]
-		setSegments(makeEmptySegsButtons(newSegs))
+		newSegs = changeFocusedSeg(newSegs, i)
+		newSegs = makeEmptySegsButtons(newSegs)
+		setSegments(newSegs)
 	}
 
 	function handleSubmit(e: FormEvent<HTMLFormElement>) {
 		e.preventDefault()
-		let newSegs: TagSegment[] = addTagSeg([...segments])
+		let newSegs: TagSegment[] = [...segments]
+		newSegs = addSeg(newSegs)
 		let i: number = findFocusedSeg(newSegs)
-		console.log(i)
-		console.log(isAValue(segments, i))
-		if (isAValue(segments, i)) i += 1
 		newSegs = changeFocusedSeg(newSegs, i)
 		setSegments(newSegs)
 	}
 
 	function renderSegments(segments: TagSegment[]) {
 		return segments.map((s, i) => {
-			let input = (
-				<input
-					key={i}
-					ref={input => (refs[i] = input)}
-					type='text'
-					value={s.text}
-					onFocus={e => handleFocus(i)}
-					onChange={e => handleChange(e, i)}
-					onKeyDown={handleKeyDown}
-				/>
-			)
-			let button = (
-				<button onFocus={e => handleFocus(i)} key={i}>
-					{s.text}
-				</button>
-			)
-			return s.isFocused ? input : button
+			const classes: string = `
+				${s.isValue ? 'tag-value' : 'tag-name'} 
+				${hasPair(segments, i) ? '' : 'solo'}
+			`
+			if (s.isFocused) {
+				return (
+					<input
+						key={i}
+						ref={input => (refs[i] = input)}
+						type='text'
+						value={s.text}
+						onFocus={e => handleFocus(i)}
+						onChange={e => handleChange(e, i)}
+						onKeyDown={checkForBackspace}
+						className={classes}
+					/>
+				)
+			} else {
+				return (
+					<button
+						onFocus={e => handleFocus(i)}
+						key={i}
+						className={classes}
+					>
+						{s.text}
+					</button>
+				)
+			}
 		})
 	}
 
+	function renderButton(): any {
+		if (segments.length > 1)
+			return <button type='submit'>add datum</button>
+	}
 	return (
 		<form onSubmit={handleSubmit}>
 			{renderSegments(segments)}
-			<button type='submit'>add datum</button>
+			{renderButton()}
 		</form>
 	)
 }
+
+/*
+['']
+> a
+['a', +t, +d, 'add']
+> TAB
+['a', '', +d, 'add']
+> TAB
+['a', '+t', '', 'add']
+*/

@@ -1,25 +1,61 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
 import DatumBar, {
-	addTagSeg,
+	addSeg,
 	findFocusedSeg,
 	changeFocusedSeg,
 	deleteSeg,
 	placeAddValueButtons,
 	makeEmptySegsButtons,
 	hasPair,
-	isAValue,
 	removeValueFromEmptyTag,
 } from './DatumBar'
 import { TagSegment } from './interfaces'
 
-function newSeg(text: string = ''): TagSegment {
-	return {
-		text,
-		isFocused: false,
-		hasValue: false,
-	}
+function newSeg(
+	text: string = '',
+	isFocused: boolean = false,
+	isValue: boolean = false
+): TagSegment {
+	return { text, isFocused, isValue }
 }
+
+const invalidStates: TagSegment[][] = [
+	[newSeg('', false, false)],
+	[newSeg('', false, true)],
+	[newSeg('', true, true)],
+	[newSeg('a', true, true)],
+	[newSeg('a', true, false), newSeg('', false, true)],
+]
+
+const states: TagSegment[][] = [
+	[newSeg('', true, false)],
+	[newSeg('a', true, false)],
+	[newSeg('a', true, false), newSeg('+', false, true)],
+	[newSeg('a', false, false), newSeg('+', true, true)],
+	[newSeg('a', false, false), newSeg('', true, true)],
+	[
+		newSeg('a', false, false),
+		newSeg('', true, true),
+		newSeg('c', false, false),
+	],
+	[
+		newSeg('a', false, false),
+		newSeg('b', false, true),
+		newSeg('c', true, false),
+	],
+	[
+		newSeg('a', false, false),
+		newSeg('b', false, true),
+		newSeg('', true, false),
+	],
+	[
+		newSeg('a', false, false),
+		newSeg('b', true, true),
+		newSeg('c', false, false),
+		newSeg('d', false, true),
+	],
+]
 
 it('renders without crashing', () => {
 	const div = document.createElement('div')
@@ -31,46 +67,46 @@ it('renders without crashing', () => {
 
 it('adds tag segments', () => {
 	let before: TagSegment[] = [
-		{ text: 'a', isFocused: false },
-		{ text: 'b', isFocused: false },
-		{ text: 'c', isFocused: false },
-		{ text: 'd', isFocused: true },
+		newSeg('a', false, false),
+		newSeg('b', false, true),
+		newSeg('c', false, false),
+		newSeg('d', true, true),
 	]
 	let after: TagSegment[] = [
-		{ text: 'a', isFocused: false },
-		{ text: 'b', isFocused: false },
-		{ text: 'c', isFocused: false },
-		{ text: 'd', isFocused: false }, // change
-		{ text: '', isFocused: true }, // change
+		newSeg('a', false, false),
+		newSeg('b', false, true),
+		newSeg('c', false, false),
+		newSeg('d', false, true), // change
+		newSeg('', true, false), // change
 	]
-	expect(addTagSeg(before)).toEqual(after)
+	expect(addSeg(before)).toEqual(after)
 
 	before = [
-		{ text: 'a', isFocused: false },
-		{ text: 'b', isFocused: true },
-		{ text: 'c', isFocused: false },
-		{ text: 'd', isFocused: false },
+		newSeg('a', false, false),
+		newSeg('b', true, true),
+		newSeg('c', false, false),
+		newSeg('d', false, true),
 	]
 	after = [
-		{ text: 'a', isFocused: false },
-		{ text: 'b', isFocused: false }, // change
-		{ text: '', isFocused: true }, // change
-		{ text: 'c', isFocused: false },
-		{ text: 'd', isFocused: false },
+		newSeg('a', false, false),
+		newSeg('b', false, true), // change
+		newSeg('', true, false), // change
+		newSeg('c', false, false),
+		newSeg('d', false, true),
 	]
-	expect(addTagSeg(before)).toEqual(after)
+	expect(addSeg(before)).toEqual(after)
 
 	before = [
-		{ text: 'a', isFocused: false },
-		{ text: '', isFocused: true },
-		{ text: 'c', isFocused: false },
-		{ text: 'd', isFocused: false },
+		newSeg('a', false, false),
+		newSeg('', true, true),
+		newSeg('c', false, false),
+		newSeg('d', false, true),
 	]
-	expect(addTagSeg(before)).toEqual(before)
+	expect(addSeg(before)).toEqual(before)
 
 	before = []
-	after = [{ text: '', isFocused: true }]
-	expect(addTagSeg(before)).toEqual(after)
+	after = [newSeg('', true, false)]
+	expect(addSeg(before)).toEqual(after)
 })
 
 it('finds the focused input', () => {
@@ -195,65 +231,57 @@ it('deletes segments', () => {
 	expect(() => deleteSeg(emptyBar)).toThrow()
 })
 
-it('places add-value buttons after valueless tags', () => {
-	let before: TagSegment[] = [
-		{ text: 'a', isFocused: false },
-		{ text: '', isFocused: true },
+it('places add-value buttons after non-empty tagnames', () => {
+	/*let before = [newSeg('a', true, false)]
+	let after = [...before, newSeg('', false, true)]
+	expect(placeAddValueButtons(before)).toEqual(after)
+*/
+	let before = [
+		newSeg('a', true, false),
+		newSeg('+', false, false),
 	]
-	let after: TagSegment[] = [
-		{ text: 'a', isFocused: false, hasValue: false },
-		newSeg('+'),
-		{ text: '', isFocused: true },
+	let after = [
+		before[0],
+		newSeg('+', false, true),
+		before[1],
 	]
 	expect(placeAddValueButtons(before)).toEqual(after)
-
-	before = [
-		{ text: 'a', isFocused: false },
-		{ text: 'b', isFocused: true },
-	]
-	after = [
-		{ text: 'a', isFocused: false, hasValue: false },
-		newSeg('+'),
-		{ text: 'b', isFocused: true, hasValue: false },
-		newSeg('+'),
-	]
+	/*
+	before = [newSeg('a', false, false)]
+	after = [...before, newSeg()]
 	expect(placeAddValueButtons(before)).toEqual(after)
-
+*/
 	before = [
 		{ text: 'a', isFocused: false },
-		{ text: 'b', isFocused: false, hasValue: true },
+		{ text: 'b', isFocused: false },
 		{ text: '', isFocused: true },
 	]
 	after = [
-		{ text: 'a', isFocused: false, hasValue: false },
+		{ text: 'a', isFocused: false },
 		newSeg('+'),
-		{ text: 'b', isFocused: false, hasValue: true },
+		{ text: 'b', isFocused: false },
+		newSeg('+'),
 		{ text: '', isFocused: true },
 	]
 	expect(placeAddValueButtons(before)).toEqual(after)
 
 	before = [
 		{ text: '', isFocused: true },
-		{ text: 'b', isFocused: false, hasValue: true },
-		{ text: 'c', isFocused: false, hasValue: false },
+		{ text: 'b', isFocused: false },
+		newSeg('+'),
+		{ text: 'c', isFocused: false },
+		newSeg('+'),
 	]
 
 	expect(placeAddValueButtons(before)).toEqual(before)
 
 	before = [
-		{ text: 'a', isFocused: false },
-		{ text: 'b', isFocused: false, hasValue: true },
-		{ text: '', isFocused: true, hasValue: true }, // value cannot have a value
-	]
-	expect(() => placeAddValueButtons(before)).toThrow()
-
-	before = [
-		{ text: '', isFocused: true, hasValue: false },
-		{ text: 'b', isFocused: false, hasValue: false },
+		{ text: '', isFocused: true },
+		{ text: 'b', isFocused: false },
 	]
 	after = [
-		{ text: '', isFocused: true, hasValue: false },
-		{ text: 'b', isFocused: false, hasValue: false },
+		{ text: '', isFocused: true },
+		{ text: 'b', isFocused: false },
 		newSeg('+'),
 	]
 	expect(placeAddValueButtons(before)).toEqual(after)
@@ -276,14 +304,17 @@ it('checks if a segment has a value/button', () => {
 	expect(hasPair(segs, 0)).toEqual(false)
 	expect(() => hasPair(segs, 1)).toThrow()
 
-	segs = [newSeg('a')]
-	expect(hasPair(segs, 0)).toEqual(false)
+	segs = [newSeg('a', false, false), newSeg('', true, true)]
+	expect(hasPair(segs, 0)).toEqual(true)
+	expect(hasPair(segs, 1)).toEqual(true)
 
 	segs = [
-		newSeg('a'),
-		{ ...newSeg('b'), hasValue: false },
-		newSeg('+'),
+		newSeg('a', false, false),
+		newSeg('b', false, true),
 	]
+	expect(hasPair(segs, 0)).toEqual(false)
+
+	segs = [newSeg('a'), newSeg('b'), newSeg('+')]
 	expect(hasPair(segs, 0)).toEqual(false)
 	expect(hasPair(segs, 1)).toEqual(true)
 })
@@ -298,13 +329,4 @@ it('removes add-value buttons from empty tags', () => {
 
 	before = [{ ...newSeg(), isFocused: true }]
 	expect(removeValueFromEmptyTag(before)).toEqual(before)
-})
-
-it('checks if a segment is a value', () => {
-	let segs = [newSeg()]
-	expect(isAValue(segs, 0)).toEqual(false)
-	expect(() => isAValue(segs, 1)).toThrow()
-
-	segs = [newSeg(), newSeg('+')]
-	expect(isAValue(segs, 1)).toEqual(true)
 })
