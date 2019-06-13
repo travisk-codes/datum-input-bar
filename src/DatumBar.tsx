@@ -136,7 +136,6 @@ export default function DatumBar() {
 	const newSeg = [{ text: '', isFocused: true }]
 	const [segments, setSegments] = useState(newSeg)
 	let refs: any[] = []
-
 	useEffect(() => {
 		refs[findFocusedSeg(segments)].focus()
 	})
@@ -212,18 +211,21 @@ export default function DatumBar() {
 			}
 		})
 	}
-
+	// eslint-disable-next-line
 	function renderButton(): any {
-		if (segments.length > 1)
+		if (segments[0].text)
 			return <button type='submit'>add datum</button>
 	}
+
 	return (
 		<form onSubmit={handleSubmit}>
 			{renderSegments(segments)}
-			{renderButton()}
+			{/*renderButton()*/}
 		</form>
 	)
 }
+
+// 'yey' |> console.log
 
 /*
 ['']
